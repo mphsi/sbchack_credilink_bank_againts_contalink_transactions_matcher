@@ -10,7 +10,7 @@ def lambda_handler(event:, context:)
   username               = '*'
   password               = '*'
   account_number         = '4099856726' # event['body-json']['account_number']
-  company_rfc            = 'TEG080425R58' # event['body-json']['account_number']
+  company_rfc            = event['body-json']['empresa_rfc']
   existance_validator    = BankAccountExistanceValidator.new(account_number)
   security_point_matcher = SecurityPointMatcher.new(account_number, company_rfc)
 
