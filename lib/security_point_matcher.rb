@@ -1,23 +1,21 @@
+require 'date'
 # todo: add doc
 class SecurityPointMatcher
   include ExternalServicesMethods
 
   attr_reader :account_number, :company_rfc, :contalink_movements, :bank_movements
-  attr_reader :connection
 
   def initialize(account_number, company_rfc)
     @since               = '2018-01-01' # to be a parameter
     @until               = '2018-12-31' # to be a parameter
     @account_number      = account_number
     @company_rfc         = company_rfc
-    @connection          = build_connection
     @contalink_movements = get_contalink_movements(company_rfc)
     @bank_movements      = get_bank_account_movements(account_number)
     @deposits_cl         = calculate_deposits_cl(@contalink_movements)
     @withdrawals_cl      = calculate_withdrawals_cl(@contalink_movements)
     @deposits_bank       = calculate_deposits_bank(@bank_movements)
     @withdrawals_bank    = calculate_withdrawals_bank(@bank_movements)
-    @connection.close()
   end
 
   def approves?
@@ -35,40 +33,34 @@ class SecurityPointMatcher
 
   private
 
-  def build_connection
-    new_connection({
-      'host' => ENV['DB_HOST'],
-      'database' => ENV['DB_NAME'],
-      'username' => ENV['DB_USER'],
-      'password' => ENV['DB_PASS']
-    })
+  def get_contalink_movements(company_rfc)
+    response = call_bank_web_service(
+      ENV['CONTALINK_API_ENDPOINT'],
+      {'Authorization' => authorization, 'Content-Type' => 'application/json'},
+      {
+        function_name: 'cl_get_status_accounts_in_period',
+        function_param: {
+          'empresa_rfc' => company_rfc,
+          'desde' => '2018-01-01',
+          'hasta' => '2018-12-31'
+        }
+      },
+      'POST'
+    )
+    body = response_body(response)
+    p body
+
+    response.is_a?(Net::HTTPSuccess) ? body : []
   end
 
-  def get_contalink_movements(company_rfc)
-    connection.exec(%{
-      select
-        *
-      from status_accounts
-      inner join status_account_groups
-      on status_account_groups.id = status_accounts.status_account_group_id
-      where status_account_groups.cuenta_empresa_id = (
-        select
-          id
-        from cuenta_empresas
-        where empresa_id in (
-          select
-            id
-          from empresas where rfc = 'TEG080425R58'
-        )
-        order by created_at desc limit 1
-      )
-      and fecha >= '#{@since}' and fecha <= '#{@until}'
-    }).map{ |row| row }
+  def authorization
+    'dd9379b4-6575-471a-91ef-1dbfffe59fa8 580cd5a8-bab1-49c6-9cb1-c3a576b65778'
   end
 
   def get_bank_account_movements(account_number)
     response = call_bank_web_service(
       ENV['ACCOUNT_MOVEMENTS_ENDPOINT'],
+      bank_request_headers,
       {accountNumber: account_number, movementsNumber: 10}
     )
     body     = response_body(response)

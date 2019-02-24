@@ -1,7 +1,5 @@
 require 'json'
 require 'net/http'
-require 'pg'
-require 'database_connection'
 require './lib/external_services_methods.rb'
 require './lib/bank_account_existance_validator.rb'
 require './lib/security_point_matcher.rb'
