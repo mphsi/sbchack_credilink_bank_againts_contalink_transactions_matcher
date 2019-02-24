@@ -27,8 +27,30 @@ class SecurityPointMatcher
       deposits_in_contalink: @deposits_cl,
       withdrawals_in_contalink: @withdrawals_cl,
       deposits_in_bank: @deposits_bank,
-      withdrawals_bank: @withdrawals_bank
+      withdrawals_bank: @withdrawals_bank,
+      deposits_match_percentage: deposits_match_percentage,
+      withdrawals_match_percentage: withdrawals_match_percentage
     }
+  end
+
+  def deposits_match_percentage
+    (
+      (
+        @deposits_cl > @deposits_bank ?
+          (@deposits_bank / @deposits_cl) :
+          (@deposits_cl / @deposits_bank)
+      ) * 100
+    ).round(2)
+  end
+
+  def withdrawals_match_percentage
+    (
+      (
+        @withdrawals_cl > @withdrawals_bank ?
+          (@withdrawals_bank / @withdrawals_cl) :
+          (@withdrawals_cl / @withdrawals_bank)
+      ) * 100
+    ).round(2)
   end
 
   private
