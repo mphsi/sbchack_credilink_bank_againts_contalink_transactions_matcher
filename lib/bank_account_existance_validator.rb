@@ -8,7 +8,11 @@ class BankAccountExistanceValidator
   end
 
   def exists?
-    response = call_bank_web_service(ENV['ACCOUNT_EXISTANCE_ENDPOINT'], {accountNumber: account_number})
+    response = call_bank_web_service(
+      ENV['ACCOUNT_EXISTANCE_ENDPOINT'],
+      bank_request_headers,
+      {accountNumber: account_number}
+    )
     body     = response_body(response)
 
     if response.is_a?(Net::HTTPSuccess)
