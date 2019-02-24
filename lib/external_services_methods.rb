@@ -8,12 +8,19 @@ module ExternalServicesMethods
     }
   end
 
-  def call_bank_web_service(endpoint, headers, query_params = nil)
+  def call_bank_web_service(endpoint, headers, params = nil, method = 'GET')
     uri           = URI.parse(endpoint)
     http          = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl  = uri.scheme == 'https'
-    uri.query     = query_params.nil? ? nil : URI.encode_www_form(query_params)
-    request       = Net::HTTP::Get.new(uri.request_uri, headers)
+
+    case method
+    when 'GET'
+      uri.query = params.nil? ? nil : URI.encode_www_form(params)
+      request   = Net::HTTP::Get.new(uri.request_uri, headers)
+    when 'POST'
+      request      = Net::HTTP::Post.new(uri.request_uri, headers)
+      request.body = params.to_json
+    end
 
     http.request(request)
   end
